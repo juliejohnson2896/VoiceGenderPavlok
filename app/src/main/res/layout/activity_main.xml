@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:id="@+id/layout_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:background="#eeeeee"
+        android:elevation="2dp">
+
+        <TextView
+            android:id="@+id/text_permission_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Mic Permission: Unknown"
+            android:textStyle="bold"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+
+        <TextView
+            android:id="@+id/text_vad_running"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="VAD Status: Idle"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+
+        <TextView
+            android:id="@+id/text_vad_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Speech: N/A"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/button_start"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Start Monitoring" />
+
+    <Button
+        android:id="@+id/button_stop"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Stop Monitoring"
+        android:layout_marginTop="12dp" />
+
+    <Button
+        android:id="@+id/button_enroll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Enroll Voice"
+        android:layout_marginTop="12dp" />
+
+    <Button
+        android:id="@+id/button_settings"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Settings"
+        android:layout_marginTop="12dp" />
+
+    <Button
+        android:id="@+id/button_logs"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Logs"
+        android:layout_marginTop="12dp" />
+</LinearLayout>

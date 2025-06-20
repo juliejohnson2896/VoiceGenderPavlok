@@ -1,0 +1,27 @@
+pluginManagement {
+    repositories {
+        google {
+            content {
+                includeGroupByRegex("com\\.android.*")
+                includeGroupByRegex("com\\.google.*")
+                includeGroupByRegex("androidx.*")
+            }
+        }
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS) // This enforces repository definition in settings.gradle
+    repositories {
+        google()
+        mavenCentral()
+        // Add any other repositories you were using in build.gradle here
+        flatDir {
+            dirs("libs")
+        }
+    }
+}
+
+rootProject.name = "VoiceGenderPavlok"
+include ':app'
