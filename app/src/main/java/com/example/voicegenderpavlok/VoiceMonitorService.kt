@@ -49,8 +49,6 @@ class VoiceMonitorService : Service() {
             val buffer = AudioBuffer(audio, 16000, 1)
 
             try {
-//                MLUtils.loadModel(applicationContext)
-
                 if (MLUtils.verifySpeaker(applicationContext, buffer)) {
                     val gender = MLUtils.classifyGender(MLUtils.generateEmbedding(buffer))
                     if (gender == Gender.MALE) {

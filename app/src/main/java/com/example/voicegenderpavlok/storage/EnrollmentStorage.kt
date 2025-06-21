@@ -3,18 +3,11 @@ package com.example.voicegenderpavlok.storage
 import android.content.Context
 import android.util.Log
 import com.example.voicegenderpavlok.ml.EmbeddingMetadata
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import java.io.File
 
 object EnrollmentStorage {
 
     private lateinit var appContext: Context
-
-    private val json = Json {
-        prettyPrint = true
-        ignoreUnknownKeys = true
-    }
 
     fun initialize(context: Context) {
         appContext = context.applicationContext
@@ -31,7 +24,7 @@ object EnrollmentStorage {
         return dir.listFiles { file -> file.extension == "json" }
             ?.mapNotNull { jsonFile ->
                 try {
-                    val metadata = json.decodeFromString<EmbeddingMetadata>(jsonFile.readText())
+                    val metadata = FileUtils.readMetadataFile(jsonFile)
                     val id = jsonFile.nameWithoutExtension
                     val audioPath = File(dir, metadata.audioFile).absolutePath
                     val embeddingPath = File(dir, metadata.embeddingFile).absolutePath
@@ -50,22 +43,81 @@ object EnrollmentStorage {
     }
 
     fun saveSample(sample: EnrollmentSample) {
-        val dir = getEnrollmentDir()
-
-        val jsonFile = File(dir, "${sample.id}.json")
-        val metadata = sample.metadata
-        jsonFile.writeText(json.encodeToString(metadata))
+        val jsonFile = File(getEnrollmentDir(), "${sample.id}.json")
+        FileUtils.writeMetadataFile(jsonFile, sample.metadata)
     }
+
+    fun saveSample(
+        context: Context,
+        rawAudio: FloatArray,
+        embedding: FloatArray,
+        label: String? = null,
+        autoEnrolled: Boolean = false
+    ) {
+        val timestamp = System.currentTimeMillis()
+        val id = "sample_$timestamp"
+
+        val audioFileName = "$id.wav"
+        val audioFile = File(getEnrollmentDir(), audioFileName)
+        val shortBuffer = rawAudio.map { (it * 32767).toInt().coerceIn(-32768, 32767).toShort() }.toShortArray()
+        FileUtils.writeWavFile(shortBuffer, 16000, audioFile)
+
+        val embeddingFileName = "$id.embedding"
+        val embeddingFile = File(getEnrollmentDir(), embeddingFileName)
+        FileUtils.writeEmbeddingFile(embeddingFile, embedding)
+
+        val metadata = EmbeddingMetadata(
+            timestamp = timestamp,
+            label = label,
+            audioFile = audioFileName,
+            embeddingFile = embeddingFileName,
+            autoEnrolled = autoEnrolled
+        )
+
+        val sample = EnrollmentSample(
+            id = id,
+            audioPath = audioFile.absolutePath,
+            embeddingPath = embeddingFile.absolutePath,
+            metadata = metadata
+        )
+
+        saveSample(sample)
+    }
+
 
     fun deleteSample(sampleId: String) {
         val dir = getEnrollmentDir()
-        File(dir, "$sampleId.json").delete()
-        File(dir, "$sampleId.wav").delete()
-        File(dir, "$sampleId.embedding").delete()
+        val files = listOf(
+            File(dir, "$sampleId.json"),
+            File(dir, "$sampleId.wav"),
+            File(dir, "$sampleId.embedding")
+        )
+        files.forEach { file ->
+            if (file.exists()) {
+                if (!file.delete()) {
+                    Log.w("EnrollmentStorage", "Failed to delete ${file.name}")
+                }
+            }
+        }
     }
 
+
     fun clearAllSamples() {
-        val dir = getEnrollmentDir()
-        dir.listFiles()?.forEach { it.delete() }
+        getEnrollmentDir().listFiles()?.forEach { file ->
+            if (file.extension in listOf("json", "wav", "embedding")) {
+                file.delete()
+            }
+        }
+    }
+
+    fun listAllEmbeddings(): List<FloatArray> {
+        return listSamples().mapNotNull { sample ->
+            try {
+                FileUtils.readEmbedding(File(sample.embeddingPath))
+            } catch (e: Exception) {
+                Log.e("EnrollmentStorage", "Failed to read embedding: ${sample.embeddingPath}", e)
+                null
+            }
+        }
     }
 }

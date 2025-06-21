@@ -15,8 +15,9 @@ import androidx.lifecycle.lifecycleScope
 import com.example.voicegenderpavlok.ml.MLUtils
 import com.example.voicegenderpavlok.storage.EnrollmentStorage
 import com.example.voicegenderpavlok.ui.EnrollmentActivity
-import com.example.voicegenderpavlok.ui.EnrollmentHistoryActivity
+import com.example.voicegenderpavlok.ui.enrollment.EnrollmentHistoryActivity
 import com.example.voicegenderpavlok.ui.SettingsActivity
+import com.example.voicegenderpavlok.ui.SpeakerTestActivity
 import com.example.voicegenderpavlok.utils.*
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -31,6 +32,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var permissionStatusText: TextView
     private lateinit var vadRunningText: TextView
     private lateinit var vadStatusText: TextView
+    private lateinit var speakerTestButton: Button
 
     private val micPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -55,6 +57,7 @@ class MainActivity : AppCompatActivity() {
         enrollmentButton = findViewById(R.id.button_enroll)
         logsButton = findViewById(R.id.button_logs)
         vadStatusText = findViewById(R.id.text_vad_status)
+        speakerTestButton = findViewById<Button>(R.id.open_speaker_test_button)
 
         startButton.setOnClickListener {
             checkMicPermissionAndStart()
@@ -80,6 +83,10 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, EnrollmentHistoryActivity::class.java))
         }
 
+        speakerTestButton.setOnClickListener {
+            val intent = Intent(this, SpeakerTestActivity::class.java)
+            startActivity(intent)
+        }
 
         permissionStatusText = findViewById(R.id.text_permission_status)
         vadRunningText = findViewById(R.id.text_vad_running)

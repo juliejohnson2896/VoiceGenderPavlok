@@ -70,4 +70,12 @@
         android:layout_height="wrap_content"
         android:text="Logs"
         android:layout_marginTop="12dp" />
+
+    <Button
+        android:id="@+id/open_speaker_test_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Test Speaker Verification"
+        android:layout_marginTop="16dp"/>
+
 </LinearLayout>

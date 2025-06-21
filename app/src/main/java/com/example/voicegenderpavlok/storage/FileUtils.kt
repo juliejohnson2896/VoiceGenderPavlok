@@ -1,8 +1,11 @@
-package com.example.voicegenderpavlok.utils
+package com.example.voicegenderpavlok.storage
 
 import android.content.Context
-import android.media.MediaPlayer
 import android.util.Log
+import com.example.voicegenderpavlok.ml.EmbeddingMetadata
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
@@ -134,4 +137,29 @@ object FileUtils {
         )
     }
 
+
+    private val json = Json {
+        prettyPrint = true
+        ignoreUnknownKeys = true
+    }
+
+    fun writeMetadataFile(file: File, metadata: EmbeddingMetadata) {
+        file.writeText(json.encodeToString(metadata))
+    }
+
+    fun readMetadataFile(file: File): EmbeddingMetadata {
+        return json.decodeFromString(file.readText())
+    }
+
+    fun getDebugDir(context: Context): File {
+        val dir = File(context.filesDir, "debug")
+        if (!dir.exists()) dir.mkdirs()
+        return dir
+    }
+
+    fun writeDebugWav(context: Context, samples: FloatArray, sampleRate: Int = 16000) {
+        val file = File(getDebugDir(context), "last_input.wav")
+        val shortBuffer = samples.map { (it * 32767).toInt().coerceIn(-32768, 32767).toShort() }.toShortArray()
+        writeWavFile(shortBuffer, sampleRate, file)
+    }
 }

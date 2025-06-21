@@ -17,8 +17,9 @@
 
         <!-- Activities -->
         <activity android:name=".ui.EnrollmentActivity" android:exported="false" />
-        <activity android:name=".ui.EnrollmentHistoryActivity" android:exported="false"/>
-<!--        <activity android:name=".ui.SettingsActivity" android:exported="false" />-->
+        <activity android:name=".ui.enrollment.EnrollmentHistoryActivity" android:exported="false"/>
+        <activity android:name=".ui.SpeakerTestActivity" />
+        <!--        <activity android:name=".ui.SettingsActivity" android:exported="false" />-->
 <!--        <activity android:name=".ui.LogsActivity" android:exported="false" />-->
 
         <activity android:name=".MainActivity"
