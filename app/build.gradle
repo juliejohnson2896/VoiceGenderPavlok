@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace 'com.example.voicegenderpavlok'
+    namespace 'com.juliejohnson.voicegenderpavlok'
     compileSdk 35
 
     defaultConfig {
@@ -71,4 +71,7 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
 
     implementation libs.jtransforms
+
+    implementation libs.androidx.lifecycle.viewmodel.ktx
+    implementation libs.androidx.activity.ktx
 }

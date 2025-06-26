@@ -7,7 +7,7 @@
     android:gravity="center">
 
     <!-- Add below your statusText and recordButton -->
-    <com.example.voicegenderpavlok.ui.WaveformView
+    <com.juliejohnson.voicegenderpavlok.ui.WaveformView
         android:id="@+id/waveform_view"
         android:layout_width="match_parent"
         android:layout_height="100dp"
@@ -22,8 +22,20 @@
         android:padding="16dp" />
 
     <Button
-        android:id="@+id/record_button"
+        android:id="@+id/record_masculine_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Start Enrollment" />
+        android:text="Record Masculine Sample" />
+
+    <Button
+        android:id="@+id/record_feminine_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Record Feminine Sample" />
+
+    <Button
+        android:id="@+id/record_androgynous_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Record Androgynous Sample" />
 </LinearLayout>

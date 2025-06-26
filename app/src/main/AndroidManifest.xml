@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.voicegenderpavlok">
+    package="com.juliejohnson.voicegenderpavlok">
 
     <!-- Required Permissions -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
@@ -16,13 +16,13 @@
         android:theme="@style/Theme.VoiceGenderPavlokMonitor">
 
         <!-- Activities -->
-        <activity android:name=".ui.EnrollmentActivity" android:exported="false" />
-        <activity android:name=".ui.enrollment.EnrollmentHistoryActivity" android:exported="false"/>
-        <activity android:name=".ui.SpeakerTestActivity" />
+        <activity android:name="com.juliejohnson.voicegenderpavlok.ui.EnrollmentActivity" android:exported="false" />
+        <activity android:name="com.juliejohnson.voicegenderpavlok.ui.enrollment.EnrollmentHistoryActivity" android:exported="false"/>
+        <activity android:name="com.juliejohnson.voicegenderpavlok.ui.SpeakerTestActivity" />
         <!--        <activity android:name=".ui.SettingsActivity" android:exported="false" />-->
 <!--        <activity android:name=".ui.LogsActivity" android:exported="false" />-->
 
-        <activity android:name=".MainActivity"
+        <activity android:name="com.juliejohnson.voicegenderpavlok.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -32,7 +32,7 @@
 
         <!-- Foreground Service -->
         <service
-            android:name=".VoiceMonitorService"
+            android:name="com.juliejohnson.voicegenderpavlok.VoiceMonitorService"
             android:exported="false"
             android:foregroundServiceType="microphone" />
     </application>
