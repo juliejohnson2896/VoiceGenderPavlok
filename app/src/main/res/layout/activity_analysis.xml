@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="24dp"
+    tools:context=".ui.AnalysisActivity">
+
+    <TextView
+        android:id="@+id/pitch_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Listening..."
+        android:textSize="48sp"
+        android:textStyle="bold"
+        tools:text="155.56 Hz" />
+
+    <TextView
+        android:id="@+id/formant1_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="F1: ..."
+        android:layout_marginTop="24dp"
+        android:textSize="28sp" />
+
+    <TextView
+        android:id="@+id/formant2_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="F2: ..."
+        android:layout_marginTop="8dp"
+        android:textSize="28sp" />
+
+</LinearLayout>

@@ -6,8 +6,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import com.juliejohnson.voicegenderpavlok.data.VoiceProfile
 import com.juliejohnson.voicegenderpavlok.databinding.ActivityEnrollmentBinding
+import com.juliejohnson.voicegenderpavlok.ml.VoiceProfile
 import com.juliejohnson.voicegenderpavlok.ui.enrollment.EnrollmentViewModel
 import kotlinx.coroutines.launch
 
@@ -25,14 +25,16 @@ class EnrollmentActivity : AppCompatActivity() {
         // Prepare the ViewModel and its components
         viewModel.initialize(this)
 
+        val voiceProfile = VoiceProfile()
+
         binding.recordMasculineButton.setOnClickListener {
-            viewModel.startEnrollmentFlow(this, VoiceProfile.MASCULINE)
+            viewModel.startEnrollmentFlow(this, voiceProfile)
         }
         binding.recordFeminineButton.setOnClickListener {
-            viewModel.startEnrollmentFlow(this, VoiceProfile.FEMININE)
+            viewModel.startEnrollmentFlow(this, voiceProfile)
         }
         binding.recordAndrogynousButton.setOnClickListener {
-            viewModel.startEnrollmentFlow(this, VoiceProfile.ANDROGYNOUS)
+            viewModel.startEnrollmentFlow(this, voiceProfile)
         }
 
         // This coroutine observes the UI state and updates the screen

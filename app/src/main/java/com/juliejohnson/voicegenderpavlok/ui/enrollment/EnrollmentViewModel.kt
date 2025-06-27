@@ -6,10 +6,10 @@ import android.util.Log
 import androidx.annotation.RequiresPermission
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.juliejohnson.voicegenderpavlok.data.VoiceProfile
 import com.juliejohnson.voicegenderpavlok.ml.AudioBuffer
 import com.juliejohnson.voicegenderpavlok.ml.Gender
 import com.juliejohnson.voicegenderpavlok.ml.MLUtils
+import com.juliejohnson.voicegenderpavlok.ml.VoiceProfile
 import com.juliejohnson.voicegenderpavlok.storage.EnrollmentStorage
 import com.juliejohnson.voicegenderpavlok.ui.EnrollmentUiState
 import com.juliejohnson.voicegenderpavlok.utils.VADRecorder

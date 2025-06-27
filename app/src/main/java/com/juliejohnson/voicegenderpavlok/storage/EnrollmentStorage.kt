@@ -2,9 +2,9 @@ package com.juliejohnson.voicegenderpavlok.storage
 
 import android.content.Context
 import android.util.Log
-import com.juliejohnson.voicegenderpavlok.data.VoiceProfile
 import com.juliejohnson.voicegenderpavlok.ml.EmbeddingMetadata
 import com.juliejohnson.voicegenderpavlok.ml.Gender
+import com.juliejohnson.voicegenderpavlok.ml.VoiceProfile
 import java.io.File
 
 object EnrollmentStorage {

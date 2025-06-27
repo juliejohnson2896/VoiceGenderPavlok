@@ -14,6 +14,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.juliejohnson.voicegenderpavlok.ml.MLUtils
 import com.juliejohnson.voicegenderpavlok.storage.EnrollmentStorage
+import com.juliejohnson.voicegenderpavlok.ui.AnalysisActivity
 import com.juliejohnson.voicegenderpavlok.ui.EnrollmentActivity
 import com.juliejohnson.voicegenderpavlok.ui.enrollment.EnrollmentHistoryActivity
 import com.juliejohnson.voicegenderpavlok.ui.SettingsActivity
@@ -33,6 +34,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var vadRunningText: TextView
     private lateinit var vadStatusText: TextView
     private lateinit var speakerTestButton: Button
+    // At the top of MainActivity with your other variable declarations
+    private lateinit var analysisButton: Button
+
 
     private val micPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -86,6 +90,12 @@ class MainActivity : AppCompatActivity() {
         speakerTestButton.setOnClickListener {
             val intent = Intent(this, SpeakerTestActivity::class.java)
             startActivity(intent)
+        }
+
+        // Inside onCreate() after your other findViewById calls
+        analysisButton = findViewById(R.id.button_start_analysis)
+        analysisButton.setOnClickListener {
+            startActivity(Intent(this, AnalysisActivity::class.java))
         }
 
         permissionStatusText = findViewById(R.id.text_permission_status)

@@ -10,13 +10,21 @@ android {
     compileSdk 35
 
     defaultConfig {
-        applicationId "com.example.voicegenderpavlok"
+        applicationId "com.juliejohnson.voicegenderpavlok"
         minSdk 28
         targetSdk 35
         versionCode 1
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        externalNativeBuild {
+            cmake {
+                // Enable modern C++ features that Essentia uses
+                cppFlags "-std=c++17", "-fexceptions", "-frtti"
+                arguments "-DANDROID_STL=c++_static"
+            }
+        }
     }
 
     buildTypes {
@@ -38,6 +46,14 @@ android {
     buildFeatures {
         viewBinding true
         compose true
+    }
+
+    // This tells Gradle where your C++ build script is located
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+            version "3.22.1" // Or a recent version installed via SDK manager
+        }
     }
 }
 
@@ -74,4 +90,9 @@ dependencies {
 
     implementation libs.androidx.lifecycle.viewmodel.ktx
     implementation libs.androidx.activity.ktx
+
+    // Audio Feature processing
+    // https://mvnrepository.com/artifact/be.tarsos.dsp/core
+    implementation libs.core
+    implementation libs.jvm
 }

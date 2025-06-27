@@ -19,6 +19,7 @@
         <activity android:name="com.juliejohnson.voicegenderpavlok.ui.EnrollmentActivity" android:exported="false" />
         <activity android:name="com.juliejohnson.voicegenderpavlok.ui.enrollment.EnrollmentHistoryActivity" android:exported="false"/>
         <activity android:name="com.juliejohnson.voicegenderpavlok.ui.SpeakerTestActivity" />
+        <activity android:name=".ui.AnalysisActivity" android:exported="false"/>
         <!--        <activity android:name=".ui.SettingsActivity" android:exported="false" />-->
 <!--        <activity android:name=".ui.LogsActivity" android:exported="false" />-->
 
