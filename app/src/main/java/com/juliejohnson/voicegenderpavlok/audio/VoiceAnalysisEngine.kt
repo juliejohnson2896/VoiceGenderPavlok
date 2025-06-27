@@ -1,15 +1,22 @@
 package com.juliejohnson.voicegenderpavlok.audio
 
+import android.util.Log
+
 object VoiceAnalysisEngine {
+
     init {
-        System.loadLibrary("voice_analysis_engine")
+        try {
+            System.loadLibrary("voice_analysis_engine")
+            Log.d("VoiceAnalysisEngine", "Native Essentia library loaded.")
+        } catch (e: UnsatisfiedLinkError) {
+            Log.e("VoiceAnalysisEngine", "Failed to load native Essentia library", e)
+        }
     }
 
-    /**
-     * Compute pitch in Hz for the given PCM float buffer.
-     * @param audioBuffer PCM samples (e.g. normalized -1..1)
-     * @param sampleRate sample rate in Hz (e.g. 44100)
-     * @return pitch in Hz (0.0 if unvoiced or on error)
-     */
-    external fun getPitch(audioBuffer: FloatArray, sampleRate: Int): Float
+    // --- NEW: Declare all our JNI functions ---
+    external fun initialize(sampleRate: Int, frameSize: Int)
+    external fun shutdown()
+    external fun getPitch(audioBuffer: FloatArray): Float
+
+    // We will add more analysis functions here later (e.g., getFormants)
 }

@@ -11,7 +11,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import com.juliejohnson.voicegenderpavlok.R
-import com.juliejohnson.voicegenderpavlok.audio.VoiceAnalysisEngine // Import our new engine
+import com.juliejohnson.voicegenderpavlok.audio.VoiceAnalysisEngine
 import kotlin.concurrent.thread
 
 class AnalysisActivity : AppCompatActivity() {
@@ -32,8 +32,8 @@ class AnalysisActivity : AppCompatActivity() {
         setContentView(R.layout.activity_analysis)
         pitchTextView = findViewById(R.id.pitch_text)
 
-        // Make sure our native library is loaded when the activity is created
-        VoiceAnalysisEngine
+        // --- THE FIX: Initialize the Essentia engine when the activity is created ---
+        VoiceAnalysisEngine.initialize(sampleRate, bufferSize)
     }
 
     override fun onResume() {
@@ -49,6 +49,12 @@ class AnalysisActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         stopAudioProcessing()
+    }
+
+    // --- NEW: Add onDestroy to properly shut down the engine ---
+    override fun onDestroy() {
+        super.onDestroy()
+        VoiceAnalysisEngine.shutdown()
     }
 
     @SuppressLint("MissingPermission")
@@ -71,8 +77,8 @@ class AnalysisActivity : AppCompatActivity() {
                         floatBuffer[i] = shortBuffer[i] / 32768.0f
                     }
 
-                    // Call our C++ function via the Kotlin Engine!
-                    val pitch = VoiceAnalysisEngine.getPitch(floatBuffer, sampleRate)
+                    // Call our C++ function, which is now much faster
+                    val pitch = VoiceAnalysisEngine.getPitch(floatBuffer)
 
                     runOnUiThread {
                         if (pitch > 0) {
@@ -86,11 +92,10 @@ class AnalysisActivity : AppCompatActivity() {
 
     private fun stopAudioProcessing() {
         isRecording = false
-        recordThread?.join() // Wait for the processing thread to finish
+        recordThread?.join()
         audioRecord?.stop()
         audioRecord?.release()
         audioRecord = null
-        recordThread = null
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
