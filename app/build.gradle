@@ -18,12 +18,12 @@ android {
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
-        externalNativeBuild {
-            cmake {
-                // Enable modern C++ features that Essentia uses
-                cppFlags "-std=c++17", "-fexceptions", "-frtti"
-                arguments "-DANDROID_STL=c++_static"
-            }
+        // NDK configuration
+        ndk {
+            // Specify the ABIs you want to build for
+            abiFilters 'arm64-v8a'
+            // Add x86, x86_64 if you need emulator support:
+            // abiFilters 'arm64-v8a', 'armeabi-v7a', 'x86', 'x86_64'
         }
     }
 
@@ -31,6 +31,17 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+
+            // NDK debug symbols for release builds (optional)
+            ndk {
+                debugSymbolLevel 'SYMBOL_TABLE'
+            }
+            debug {
+                // Enable NDK debugging
+                debuggable true
+            }
+            debuggable true
+            signingConfig signingConfigs.debug
         }
     }
 
@@ -43,6 +54,19 @@ android {
         jvmTarget = '17'
     }
 
+    // NDK build configuration
+    ndkVersion '27.2.12479018'
+    packagingOptions {
+        jniLibs {
+            pickFirsts += ['**/libc++_shared.so', '**/libjsc.so']
+        }
+        resources {
+            excludes += ['META-INF/DEPENDENCIES', 'META-INF/LICENSE', 'META-INF/LICENSE.txt', 'META-INF/NOTICE', 'META-INF/NOTICE.txt']
+        }
+    } // Use your installed NDK version
+
+    // Packaging options
+
     buildFeatures {
         viewBinding true
         compose true
@@ -53,6 +77,14 @@ android {
         cmake {
             path "src/main/cpp/CMakeLists.txt"
             version "3.22.1" // Or a recent version installed via SDK manager
+        }
+    }
+
+    // Source sets configuration
+    sourceSets {
+        main {
+            // Ensure JNI libraries are included
+            jniLibs.srcDirs = ['src/main/jniLibs']
         }
     }
 }
@@ -96,3 +128,35 @@ dependencies {
     implementation libs.core
     implementation libs.jvm
 }
+
+// Optional: Task to verify Essentia libraries exist
+tasks.register('verifyEssentiaLibraries') {
+    doLast {
+        def abiList = ['arm64-v8a', 'armeabi-v7a']
+        def missingLibs = []
+
+        abiList.each { abi ->
+            def libPath = file("src/main/jniLibs/${abi}/libessentia.a")
+            if (!libPath.exists()) {
+                missingLibs.add("${abi}/libessentia.a")
+            } else {
+                println "✓ Found libessentia.a for ${abi}"
+            }
+        }
+
+        if (!missingLibs.empty) {
+            throw new GradleException("Missing Essentia libraries: ${missingLibs.join(', ')}")
+        }
+
+        // Check for headers
+        def headersPath = file("src/main/cpp/essentia")
+        if (!headersPath.exists()) {
+            println "⚠ Warning: Essentia headers not found at src/main/cpp/essentia"
+        } else {
+            println "✓ Found Essentia headers"
+        }
+    }
+}
+
+// Run verification before building
+preBuild.dependsOn verifyEssentiaLibraries

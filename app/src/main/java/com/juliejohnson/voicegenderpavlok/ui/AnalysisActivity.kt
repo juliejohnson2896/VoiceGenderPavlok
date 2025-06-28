@@ -7,11 +7,13 @@ import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.os.Bundle
+import android.util.Log
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import com.juliejohnson.voicegenderpavlok.R
-import com.juliejohnson.voicegenderpavlok.audio.VoiceAnalysisEngine
+import com.juliejohnson.voicegenderpavlok.audio.AudioFeatures
+import com.juliejohnson.voicegenderpavlok.audio.EssentiaAnalyzer
 import kotlin.concurrent.thread
 
 class AnalysisActivity : AppCompatActivity() {
@@ -21,24 +23,27 @@ class AnalysisActivity : AppCompatActivity() {
     private var isRecording = false
     private var recordThread: Thread? = null
 
-    // Using a standard sample rate that works well for voice
     private val sampleRate = 44100
-    private val bufferSize = 2048 // A good buffer size for real-time processing
+    private val bufferSize = 2048
 
     private val permissionsRequestCode = 101
+
+    private val essentiaAnalyzer = EssentiaAnalyzer()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_analysis)
         pitchTextView = findViewById(R.id.pitch_text)
 
-        // --- THE FIX: Initialize the Essentia engine when the activity is created ---
-        VoiceAnalysisEngine.initialize(sampleRate, bufferSize)
+        // Initialize the Essentia streaming engine when the activity is created
+        if (!essentiaAnalyzer.initialize(sampleRate)) {
+            // Handle initialization failure
+            Log.e("AudioProcessor", "Failed to initialize Essentia")
+        }
     }
 
     override fun onResume() {
         super.onResume()
-        // Check for microphone permission and start processing
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), permissionsRequestCode)
         } else {
@@ -51,10 +56,10 @@ class AnalysisActivity : AppCompatActivity() {
         stopAudioProcessing()
     }
 
-    // --- NEW: Add onDestroy to properly shut down the engine ---
     override fun onDestroy() {
         super.onDestroy()
-        VoiceAnalysisEngine.shutdown()
+        // Properly shut down the Essentia engine when the app is destroyed
+        essentiaAnalyzer.cleanup()
     }
 
     @SuppressLint("MissingPermission")
@@ -72,19 +77,35 @@ class AnalysisActivity : AppCompatActivity() {
             while (isRecording) {
                 val readSize = audioRecord?.read(shortBuffer, 0, bufferSize) ?: -1
                 if (readSize > 0) {
-                    // Convert the Short audio data from AudioRecord to the Float data Essentia needs
                     for (i in 0 until readSize) {
                         floatBuffer[i] = shortBuffer[i] / 32768.0f
                     }
 
-                    // Call our C++ function, which is now much faster
-                    val pitch = VoiceAnalysisEngine.getPitch(floatBuffer)
-
-                    runOnUiThread {
-                        if (pitch > 0) {
-                            pitchTextView.text = "%.2f Hz".format(pitch)
+                    try {
+                        val features = essentiaAnalyzer.analyzeFrame(floatBuffer)
+                        features?.let {
+                            // Use the extracted features
+                            processSpeechFeatures(it)
                         }
+                    } catch (e: Exception) {
+                        Log.e("AudioProcessor", "Analysis failed", e)
                     }
+                }
+            }
+        }
+    }
+
+    private fun processSpeechFeatures(features: AudioFeatures) {
+        if (features.isValid) {
+            Log.d("AudioFeatures", "Pitch: ${features.pitch} Hz")
+            Log.d("AudioFeatures", "Brightness: ${features.brightness}")
+            Log.d("AudioFeatures", "Resonance: ${features.resonance}")
+            Log.d("AudioFeatures", "Centroid: ${features.centroid} Hz")
+
+            // Your processing logic here
+            runOnUiThread {
+                if (features.pitch > 0) {
+                    pitchTextView.text = "%.2f Hz".format(features.pitch)
                 }
             }
         }
