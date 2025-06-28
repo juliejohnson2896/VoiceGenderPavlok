@@ -18,7 +18,7 @@ jobject createAudioFeaturesObject(JNIEnv* env, const AudioFeatures& features) {
     }
 
     // Get constructor method ID
-    jmethodID constructor = env->GetMethodID(audioFeaturesClass, "<init>", "(FFFF[FZ)V");
+    jmethodID constructor = env->GetMethodID(audioFeaturesClass, "<init>", "(FFFF[F[FZ)V");
     if (constructor == nullptr) {
         LOGE("Failed to find AudioFeatures constructor");
         return nullptr;
@@ -30,6 +30,12 @@ jobject createAudioFeaturesObject(JNIEnv* env, const AudioFeatures& features) {
         env->SetFloatArrayRegion(mfccArray, 0, features.mfcc.size(), features.mfcc.data());
     }
 
+    // Convert MFCC vector to Java float array
+    jfloatArray formantsArray = env->NewFloatArray(features.formants.size());
+    if (formantsArray != nullptr && !features.formants.empty()) {
+        env->SetFloatArrayRegion(formantsArray, 0, features.formants.size(), features.formants.data());
+    }
+
     // Create the AudioFeatures object
     jobject audioFeaturesObj = env->NewObject(audioFeaturesClass, constructor,
                                               features.pitch,
@@ -37,12 +43,17 @@ jobject createAudioFeaturesObject(JNIEnv* env, const AudioFeatures& features) {
                                               features.resonance,
                                               features.centroid,
                                               mfccArray,
+                                              formantsArray,
                                               features.isValid);
 
     // Clean up local references
     env->DeleteLocalRef(audioFeaturesClass);
     if (mfccArray != nullptr) {
         env->DeleteLocalRef(mfccArray);
+    }
+
+    if (formantsArray != nullptr) {
+        env->DeleteLocalRef(formantsArray);
     }
 
     return audioFeaturesObj;

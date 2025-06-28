@@ -6,6 +6,7 @@ data class AudioFeatures(
     val resonance: Float = 0f,          // Vocal tract resonance
     val centroid: Float = 0f,   // centroid in Hz
     val mfcc: FloatArray = floatArrayOf(), // MFCC coefficients
+    val formants: FloatArray = floatArrayOf(), // Formant frequencies
     val isValid: Boolean = false        // Whether analysis was successful
 ) {
     override fun equals(other: Any?): Boolean {
@@ -19,6 +20,7 @@ data class AudioFeatures(
         if (resonance != other.resonance) return false
         if (centroid != other.centroid) return false
         if (!mfcc.contentEquals(other.mfcc)) return false
+        if (!formants.contentEquals(other.formants)) return false
         if (isValid != other.isValid) return false
 
         return true
@@ -30,6 +32,7 @@ data class AudioFeatures(
         result = 31 * result + resonance.hashCode()
         result = 31 * result + centroid.hashCode()
         result = 31 * result + mfcc.contentHashCode()
+        result = 31 * result + formants.contentHashCode()
         result = 31 * result + isValid.hashCode()
         return result
     }

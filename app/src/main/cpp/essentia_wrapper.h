@@ -23,12 +23,13 @@ struct AudioFeatures {
     float resonance = 0.0f;
     float centroid  = 0.0f;
     std::vector<float> mfcc;
+    std::vector<float> formants;
     bool isValid = false;
 
     AudioFeatures() = default;
 
-    AudioFeatures(float p, float b, float r, float sc, const std::vector<float>& m, bool valid)
-            : pitch(p), brightness(b), resonance(r), centroid (sc), mfcc(m), isValid(valid) {}
+    AudioFeatures(float p, float b, float r, float sc, const std::vector<float>& m, const std::vector<float>& f, bool valid)
+            : pitch(p), brightness(b), resonance(r), centroid (sc), mfcc(m), formants(f), isValid(valid) {}
 };
 
 /**
@@ -37,12 +38,14 @@ struct AudioFeatures {
 class EssentiaWrapper {
 private:
     // Essentia algorithms
+    std::unique_ptr<essentia::standard::Algorithm> energyAlg;
     std::unique_ptr<essentia::standard::Algorithm> pitchYin;
     std::unique_ptr<essentia::standard::Algorithm> centroidAlg;
     std::unique_ptr<essentia::standard::Algorithm> mfccAlg;
     std::unique_ptr<essentia::standard::Algorithm> windowAlg;
     std::unique_ptr<essentia::standard::Algorithm> spectrumAlg;
     std::unique_ptr<essentia::standard::Algorithm> spectralPeaksAlg;
+    std::unique_ptr<essentia::standard::Algorithm> lpcAlg;
 
     // Analysis parameters
     int sampleRate;
@@ -53,6 +56,7 @@ private:
     // Helper methods
     float calculateBrightness(const std::vector<float>& spectrum);
     float calculateResonance(const std::vector<float>& spectrum, float pitch);
+    std::vector<float> calculateFormants(std::vector<float> lpcCoeffs);
     std::vector<float> preprocessAudio(const float* audioData, int length);
 
 public:

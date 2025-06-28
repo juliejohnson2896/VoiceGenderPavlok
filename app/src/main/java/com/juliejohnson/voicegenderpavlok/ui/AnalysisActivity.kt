@@ -1,11 +1,7 @@
 package com.juliejohnson.voicegenderpavlok.ui
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.pm.PackageManager
-import android.media.AudioFormat
-import android.media.AudioRecord
-import android.media.MediaRecorder
 import android.os.Bundle
 import android.util.Log
 import android.widget.TextView
@@ -14,18 +10,21 @@ import androidx.core.app.ActivityCompat
 import com.juliejohnson.voicegenderpavlok.R
 import com.juliejohnson.voicegenderpavlok.audio.AudioFeatures
 import com.juliejohnson.voicegenderpavlok.audio.EssentiaAnalyzer
-import kotlin.concurrent.thread
+import com.juliejohnson.voicegenderpavlok.utils.VADManager // Import your existing VADManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class AnalysisActivity : AppCompatActivity() {
 
     private lateinit var pitchTextView: TextView
-    private var audioRecord: AudioRecord? = null
-    private var isRecording = false
-    private var recordThread: Thread? = null
+    private lateinit var formant1TextView: TextView
+    private lateinit var formant2TextView: TextView
 
-    private val sampleRate = 44100
-    private val bufferSize = 2048
+    // We will use a CoroutineScope for background tasks
+    private val analysisScope = CoroutineScope(Dispatchers.Default)
 
+    private val sampleRate = 44100 // Essentia is initialized with this rate
     private val permissionsRequestCode = 101
 
     private val essentiaAnalyzer = EssentiaAnalyzer()
@@ -33,7 +32,13 @@ class AnalysisActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_analysis)
+
         pitchTextView = findViewById(R.id.pitch_text)
+        formant1TextView = findViewById(R.id.formant1_text)
+        formant2TextView = findViewById(R.id.formant2_text)
+
+        // Initialize your existing VADManager when the activity is created
+        VADManager.initialize(applicationContext)
 
         // Initialize the Essentia streaming engine when the activity is created
         if (!essentiaAnalyzer.initialize(sampleRate)) {
@@ -47,42 +52,31 @@ class AnalysisActivity : AppCompatActivity() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), permissionsRequestCode)
         } else {
-            startAudioProcessing()
+            startVADListening()
         }
     }
 
     override fun onPause() {
         super.onPause()
-        stopAudioProcessing()
+        // Stop the VAD when the activity is not in the foreground to save resources
+        VADManager.stop()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        // Properly shut down the Essentia engine when the app is destroyed
-        essentiaAnalyzer.cleanup()
-    }
+    private fun startVADListening() {
+        // Use the VADManager to start listening for speech.
+        // The block of code inside this lambda will ONLY be executed when speech is detected.
+        VADManager.startListening {
+            // Speech has been detected, now we perform our analysis.
+            // We launch a coroutine to do this work in the background.
+            analysisScope.launch {
+                // Get the chunk of audio that contains the detected speech.
+                val audioBuffer = VADManager.getRecentAudio()
 
-    @SuppressLint("MissingPermission")
-    private fun startAudioProcessing() {
-        val minBufferSize = AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
-        audioRecord = AudioRecord(MediaRecorder.AudioSource.MIC, sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, minBufferSize)
-
-        audioRecord?.startRecording()
-        isRecording = true
-
-        recordThread = thread(start = true) {
-            val shortBuffer = ShortArray(bufferSize)
-            val floatBuffer = FloatArray(bufferSize)
-
-            while (isRecording) {
-                val readSize = audioRecord?.read(shortBuffer, 0, bufferSize) ?: -1
-                if (readSize > 0) {
-                    for (i in 0 until readSize) {
-                        floatBuffer[i] = shortBuffer[i] / 32768.0f
-                    }
-
+                if (audioBuffer.isNotEmpty()) {
+                    // Call our Essentia engine with the captured audio.
+                    // This now only runs when you are actually speaking.
                     try {
-                        val features = essentiaAnalyzer.analyzeFrame(floatBuffer)
+                        val features = essentiaAnalyzer.analyzeFrame(audioBuffer)
                         features?.let {
                             // Use the extracted features
                             processSpeechFeatures(it)
@@ -101,28 +95,27 @@ class AnalysisActivity : AppCompatActivity() {
             Log.d("AudioFeatures", "Brightness: ${features.brightness}")
             Log.d("AudioFeatures", "Resonance: ${features.resonance}")
             Log.d("AudioFeatures", "Centroid: ${features.centroid} Hz")
+            Log.d("AudioFeatures", "Formants: ${features.formants.joinToString(", ")} Hz")
 
             // Your processing logic here
             runOnUiThread {
                 if (features.pitch > 0) {
                     pitchTextView.text = "%.2f Hz".format(features.pitch)
                 }
+
+                // NEW: Update the formant text views
+                if (features.formants.size >= 2) {
+                    formant1TextView.text = "F1: %.0f Hz".format(features.formants[0])
+                    formant2TextView.text = "F2: %.0f Hz".format(features.formants[1])
+                }
             }
         }
-    }
-
-    private fun stopAudioProcessing() {
-        isRecording = false
-        recordThread?.join()
-        audioRecord?.stop()
-        audioRecord?.release()
-        audioRecord = null
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == permissionsRequestCode && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            startAudioProcessing()
+            startVADListening()
         }
     }
 }

@@ -1,4 +1,5 @@
 #include "essentia_wrapper.h"
+#include "unsupported/Eigen/Polynomials"
 #include <android/log.h>
 #include <memory>
 #include <algorithm>
@@ -51,7 +52,13 @@ bool EssentiaWrapper::initialize(int sr, int fs, int hs) {
         // Create algorithm factory
         AlgorithmFactory& factory = AlgorithmFactory::instance();
 
+        /////////////////////////
         // Initialize algorithms
+        /////////////////////////
+
+        //Energy algorithm
+        energyAlg.reset(factory.create("Energy"));
+
         pitchYin.reset(factory.create("PitchYin",
                                       "frameSize", frameSize,
                                       "sampleRate", sampleRate));
@@ -72,6 +79,11 @@ bool EssentiaWrapper::initialize(int sr, int fs, int hs) {
                                               "minFrequency", 40,
                                               "maxFrequency", sampleRate/2,
                                               "maxPeaks", 100));
+
+        // Implement LPC algorithm
+        int lpcOrder = 2 + (int)(this->sampleRate / 1000.0);
+        lpcAlg.reset(factory.create("LPC",
+                                    "order", lpcOrder));
 
         initialized = true;
         LOGI("Essentia initialization completed successfully");
@@ -95,12 +107,12 @@ bool EssentiaWrapper::initialize(int sr, int fs, int hs) {
 AudioFeatures EssentiaWrapper::analyzeFrame(const float* audioData, int length) {
     if (!initialized) {
         LOGE("EssentiaWrapper not initialized");
-        return AudioFeatures();
+        return {};
     }
 
     if (audioData == nullptr || length < frameSize) {
         LOGE("Invalid audio data: data=%p, length=%d, required=%d", audioData, length, frameSize);
-        return AudioFeatures();
+        return {};
     }
 
     try {
@@ -108,6 +120,21 @@ AudioFeatures EssentiaWrapper::analyzeFrame(const float* audioData, int length) 
         std::vector<float> audioFrame = preprocessAudio(audioData, std::min(length, frameSize));
 
         AudioFeatures features;
+
+        float frameEnergy;
+        energyAlg->input("array").set(audioFrame);
+        energyAlg->output("energy").set(frameEnergy);
+        energyAlg->compute();
+
+        // --- NEW: VAD Step 2 - The "Gate" ---
+        // If the energy is below a certain threshold, it's silence.
+        // We stop here and return an empty vector to save resources.
+        // This threshold may need tuning, but it's a good starting point.
+        const float energyThreshold = 0.001;
+        if (frameEnergy < energyThreshold) {
+            LOGD("Frame energy below threshold, returning empty features");
+            return {};
+        }
 
         // Apply windowing
         std::vector<float> windowedFrame;
@@ -128,8 +155,11 @@ AudioFeatures EssentiaWrapper::analyzeFrame(const float* audioData, int length) 
         pitchYin->output("pitchConfidence").set(pitchConfidence);
         pitchYin->compute();
 
+        LOGD("Pitch analysis complete: pitch=%.2f, confidence=%.2f",
+             pitch, pitchConfidence);
+
         // Only use pitch if confidence is reasonable
-        features.pitch = (pitchConfidence > 0.8) ? pitch : 0.0f;
+        features.pitch = (pitchConfidence > 0.5) ? pitch : 0.0f;
 
         // Compute spectral centroid
         float centroid;
@@ -146,28 +176,38 @@ AudioFeatures EssentiaWrapper::analyzeFrame(const float* audioData, int length) 
         mfccAlg->compute();
         features.mfcc = mfccCoeffs;
 
+        //LPC
+        std::vector<float> lpcCoeffs, reflection;
+        lpcAlg->input("frame").set(audioFrame);
+        lpcAlg->output("lpc").set(lpcCoeffs);
+        lpcAlg->output("reflection").set(reflection);
+        lpcAlg->compute();
+
         // Calculate brightness (high frequency energy ratio)
         features.brightness = calculateBrightness(spectrum);
 
         // Calculate resonance (simplified)
         features.resonance = calculateResonance(spectrum, features.pitch);
 
+        // Calculate formants
+        features.formants = calculateFormants(lpcCoeffs);
+
         features.isValid = true;
 
-        LOGD("Analysis complete: pitch=%.2f, centroid=%.2f, brightness=%.3f",
-             features.pitch, features.centroid, features.brightness);
+        LOGD("Analysis complete: pitch=%.2f, centroid=%.2f, brightness=%.3f, formants=%zu",
+             features.pitch, features.centroid, features.brightness, features.formants.size());
 
         return features;
 
     } catch (const EssentiaException& e) {
         LOGE("Essentia exception during analysis: %s", e.what());
-        return AudioFeatures();
+        return {};
     } catch (const std::exception& e) {
         LOGE("Standard exception during analysis: %s", e.what());
-        return AudioFeatures();
+        return {};
     } catch (...) {
         LOGE("Unknown exception during analysis");
-        return AudioFeatures();
+        return {};
     }
 }
 
@@ -255,6 +295,65 @@ float EssentiaWrapper::calculateResonance(const std::vector<float>& spectrum, fl
 
     return resonance;
 }
+
+std::vector<float> EssentiaWrapper::calculateFormants(
+        std::vector<float> lpcCoeffs) {
+
+    if (!lpcCoeffs.empty()) {
+        // Create a string stream to build our log message
+        std::stringstream ss;
+        ss << "LPC Coeffs (Size: " << lpcCoeffs.size() << "): [";
+        for (size_t i = 0; i < lpcCoeffs.size(); ++i) {
+            ss << lpcCoeffs[i] << (i == lpcCoeffs.size() - 1 ? "" : ", ");
+        }
+        ss << "]";
+
+        // Print the full string to Logcat with our "VoiceAnalysisEngine" tag
+        __android_log_print(ANDROID_LOG_DEBUG, "VoiceAnalysisEngine", "%s", ss.str().c_str());
+    } else {
+        __android_log_print(ANDROID_LOG_DEBUG, "VoiceAnalysisEngine", "LPC Coeffs vector is empty.");
+    }
+
+    // --- Part 2: Find Formants from LPC Coefficients ---
+    if (lpcCoeffs.empty()) {
+        return {};
+    }
+
+    // THE FIX: The first coefficient from Essentia's LPC is always 1 and must be excluded.
+    // We create a new vector starting from the second element.
+    std::vector<float> polyCoeffs(lpcCoeffs.begin() + 1, lpcCoeffs.end());
+
+    // --- Part 2: Find Formants using Eigen's PolynomialSolver ---
+    // The LPC coefficients need to be reversed for the polynomial solver.
+    std::reverse(polyCoeffs.begin(), polyCoeffs.end());
+    Eigen::VectorXcf coeffs = Eigen::Map<Eigen::VectorXf>(polyCoeffs.data(), polyCoeffs.size()).cast<std::complex<float>>();
+
+    Eigen::PolynomialSolver<std::complex<float>, Eigen::Dynamic> solver;
+    solver.compute(coeffs);
+    const Eigen::VectorXcf& roots = solver.roots();
+
+    std::vector<float> formantFrequencies;
+
+    for (int i = 0; i < roots.size(); ++i) {
+        // We are only interested in the roots with a positive imaginary part
+        if (std::imag(roots[i]) >= 0) {
+            // The angle of the root gives us the frequency
+            float angle = std::arg(roots[i]);
+            float freq = angle * (this->sampleRate / (2.0 * M_PI));
+
+            // Filter for typical human formant frequencies
+            if (freq > 90 && freq < 4000) {
+                formantFrequencies.push_back(freq);
+            }
+        }
+    }
+
+    // Sort the formants by frequency to get F1, F2, etc. in order
+    std::sort(formantFrequencies.begin(), formantFrequencies.end());
+
+    return formantFrequencies;
+}
+
 
 std::vector<float> EssentiaWrapper::preprocessAudio(const float* audioData, int length) {
     std::vector<float> processed(audioData, audioData + length);
