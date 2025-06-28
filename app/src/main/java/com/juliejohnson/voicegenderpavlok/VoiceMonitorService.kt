@@ -27,9 +27,9 @@ class VoiceMonitorService : Service() {
         startForeground(1, buildNotification())
 
         if (VADManager.initialize(applicationContext)) {
-            VADManager.startListening {
+            VADManager.startListening(onSpeechDetected = {
                 onSpeechDetected()
-            }
+            })
         } else {
             Log.e("VoiceMonitorService", "Failed to initialize audio input for VAD.")
             stopSelf()

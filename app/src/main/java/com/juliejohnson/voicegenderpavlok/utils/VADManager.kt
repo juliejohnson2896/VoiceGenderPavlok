@@ -16,12 +16,16 @@ object VADManager {
         return vadUtils?.initializeAudioRecord() ?: false
     }
 
-    fun startListening(onSpeechDetected: () -> Unit) {
-        vadUtils?.startListening(onSpeechDetected)
+    fun startListening(onSpeechDetected: () -> Unit, onRawAudio: (ShortArray) -> Unit = {}) { // Add new parameter
+        vadUtils?.startListening(onSpeechDetected, onRawAudio) // Pass it along
     }
 
     fun getRecentAudio(): FloatArray {
         return vadUtils?.getRecentAudio() ?: FloatArray(0)
+    }
+
+    fun getSampleRate(): Int {
+        return vadUtils?.getSampleRate() ?: 0
     }
 
     fun stop() {

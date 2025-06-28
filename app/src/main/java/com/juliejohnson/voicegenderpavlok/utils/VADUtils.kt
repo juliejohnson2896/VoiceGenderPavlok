@@ -65,16 +65,21 @@ class VADUtils(context: Context) {
         }
     }
 
-    fun startListening(onSpeechDetected: () -> Unit) {
+    // --- THE FIX: Add a new callback for the raw audio data ---
+    fun startListening(onSpeechDetected: () -> Unit, onRawAudio: (ShortArray) -> Unit = {}) { // Add new parameter
         val recorder = audioRecord ?: return
-
         recorder.startRecording()
 
         coroutineScope.launch {
             while (isActive) {
                 val read = recorder.read(buffer, 0, buffer.size)
                 if (read > 0) {
-                    audioHistory.append(buffer.copyOf(read))
+                    val currentChunk = buffer.copyOf(read)
+                    audioHistory.append(currentChunk)
+
+                    // --- NEW: Pass the raw audio chunk to our new callback ---
+                    onRawAudio(currentChunk)
+
                     val isSpeech = vad.isSpeech(buffer)
                     _vadStatus.value = isSpeech
                     if (isSpeech) {
@@ -88,6 +93,10 @@ class VADUtils(context: Context) {
 
     fun getRecentAudio(): FloatArray {
         return audioHistory.toArray().map { it.toFloat() / Short.MAX_VALUE }.toFloatArray()
+    }
+
+    fun getSampleRate(): Int {
+        return SAMPLE_RATE_INT
     }
 
     fun stop() {

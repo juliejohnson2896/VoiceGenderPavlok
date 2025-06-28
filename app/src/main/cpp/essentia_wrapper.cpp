@@ -308,10 +308,10 @@ std::vector<float> EssentiaWrapper::calculateFormants(
         }
         ss << "]";
 
-        // Print the full string to Logcat with our "VoiceAnalysisEngine" tag
-        __android_log_print(ANDROID_LOG_DEBUG, "VoiceAnalysisEngine", "%s", ss.str().c_str());
+        // Print the full string to Logcat with our "EssentiaWrapper" tag
+        __android_log_print(ANDROID_LOG_DEBUG, "EssentiaWrapper", "%s", ss.str().c_str());
     } else {
-        __android_log_print(ANDROID_LOG_DEBUG, "VoiceAnalysisEngine", "LPC Coeffs vector is empty.");
+        __android_log_print(ANDROID_LOG_DEBUG, "EssentiaWrapper", "LPC Coeffs vector is empty.");
     }
 
     // --- Part 2: Find Formants from LPC Coefficients ---
