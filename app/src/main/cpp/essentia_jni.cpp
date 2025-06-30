@@ -18,7 +18,7 @@ jobject createAudioFeaturesObject(JNIEnv* env, const AudioFeatures& features) {
     }
 
     // Get constructor method ID
-    jmethodID constructor = env->GetMethodID(audioFeaturesClass, "<init>", "(FFFF[F[FZ)V");
+    jmethodID constructor = env->GetMethodID(audioFeaturesClass, "<init>", "(FFFF[F[FFZ)V");
     if (constructor == nullptr) {
         LOGE("Failed to find AudioFeatures constructor");
         return nullptr;
@@ -44,6 +44,7 @@ jobject createAudioFeaturesObject(JNIEnv* env, const AudioFeatures& features) {
                                               features.centroid,
                                               mfccArray,
                                               formantsArray,
+                                              features.hnr,
                                               features.isValid);
 
     // Clean up local references

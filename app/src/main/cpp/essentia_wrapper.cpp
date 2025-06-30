@@ -80,6 +80,10 @@ bool EssentiaWrapper::initialize(int sr, int fs, int hs) {
                                               "maxFrequency", sampleRate/2,
                                               "maxPeaks", 100));
 
+        harmonicPeaksAlg.reset(factory.create("HarmonicPeaks"));
+
+        stochasticModelAnalAlg.reset(factory.create("StochasticModelAnal", "sampleRate", sampleRate));
+
         // Implement LPC algorithm
         int lpcOrder = 2 + (int)(this->sampleRate / 1000.0);
         lpcAlg.reset(factory.create("LPC",
@@ -148,9 +152,16 @@ AudioFeatures EssentiaWrapper::analyzeFrame(const float* audioData, int length) 
         spectrumAlg->output("spectrum").set(spectrum);
         spectrumAlg->compute();
 
+        std::vector<float> peak_freqs, peak_mags;
+        // 3. Find all spectral peaks (frequencies and magnitudes)
+        spectralPeaksAlg->input("spectrum").set(spectrum);
+        spectralPeaksAlg->output("frequencies").set(peak_freqs);
+        spectralPeaksAlg->output("magnitudes").set(peak_mags);
+        spectralPeaksAlg->compute();
+
         // Extract pitch using YIN algorithm
         float pitch, pitchConfidence;
-        pitchYin->input("signal").set(audioFrame);
+        pitchYin->input("signal").set(windowedFrame);
         pitchYin->output("pitch").set(pitch);
         pitchYin->output("pitchConfidence").set(pitchConfidence);
         pitchYin->compute();
@@ -160,6 +171,11 @@ AudioFeatures EssentiaWrapper::analyzeFrame(const float* audioData, int length) 
 
         // Only use pitch if confidence is reasonable
         features.pitch = (pitchConfidence > 0.5) ? pitch : 0.0f;
+
+        if (features.pitch == 0.0f) {
+            LOGD("Pitch confidence too low, returning empty features");
+            return features;
+        }
 
         // Compute spectral centroid
         float centroid;
@@ -178,10 +194,36 @@ AudioFeatures EssentiaWrapper::analyzeFrame(const float* audioData, int length) 
 
         //LPC
         std::vector<float> lpcCoeffs, reflection;
-        lpcAlg->input("frame").set(audioFrame);
+        lpcAlg->input("frame").set(windowedFrame);
         lpcAlg->output("lpc").set(lpcCoeffs);
         lpcAlg->output("reflection").set(reflection);
         lpcAlg->compute();
+
+        std::vector<float> harmonic_peaks_freq, harmonic_peaks_mag;
+        float harmonic_energy, total_energy;
+        harmonicPeaksAlg->input("pitch").set(pitch);
+        harmonicPeaksAlg->input("frequencies").set(peak_freqs);
+        harmonicPeaksAlg->input("magnitudes").set(peak_mags);
+        harmonicPeaksAlg->output("harmonicMagnitudes").set(harmonic_peaks_mag);
+        harmonicPeaksAlg->output("harmonicFrequencies").set(harmonic_peaks_freq);
+        harmonicPeaksAlg->compute();
+
+        energyAlg->input("array").set(spectrum);
+        energyAlg->output("energy").set(total_energy);
+        energyAlg->compute();
+
+        // 6. Calculate the energy of JUST the harmonic part
+        energyAlg->input("array").set(harmonic_peaks_mag);
+        energyAlg->output("energy").set(harmonic_energy);
+        energyAlg->compute();
+
+        // Calculate HNR in Decibels
+        // --- Calculate HNR in decibels ---
+        float noise_energy = total_energy - harmonic_energy;
+        float hnr = 10 * log10(harmonic_energy / noise_energy);
+        if (noise_energy <= 0) hnr = 100.0f; // If no noise, HNR is effectively infinite
+        if (harmonic_energy <= 0) hnr = 0.0f; // If no harmonics, HNR is zero
+        features.hnr = hnr;
 
         // Calculate brightness (high frequency energy ratio)
         features.brightness = calculateBrightness(spectrum);
@@ -194,8 +236,8 @@ AudioFeatures EssentiaWrapper::analyzeFrame(const float* audioData, int length) 
 
         features.isValid = true;
 
-        LOGD("Analysis complete: pitch=%.2f, centroid=%.2f, brightness=%.3f, formants=%zu",
-             features.pitch, features.centroid, features.brightness, features.formants.size());
+        LOGD("Analysis complete: pitch=%.2f, centroid=%.2f, brightness=%.3f, formants=%zu, hnr=%.2f, resonance=%.2f",
+             features.pitch, features.centroid, features.brightness, features.formants.size(), features.hnr, features.resonance);
 
         return features;
 
@@ -242,6 +284,10 @@ void EssentiaWrapper::cleanup() {
         windowAlg.reset();
         spectrumAlg.reset();
         spectralPeaksAlg.reset();
+        harmonicPeaksAlg.reset();
+        stochasticModelAnalAlg.reset();
+        lpcAlg.reset();
+        energyAlg.reset();
 
         // Shutdown Essentia
         try {

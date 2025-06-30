@@ -24,12 +24,13 @@ struct AudioFeatures {
     float centroid  = 0.0f;
     std::vector<float> mfcc;
     std::vector<float> formants;
+    float hnr = 0.0f;
     bool isValid = false;
 
     AudioFeatures() = default;
 
-    AudioFeatures(float p, float b, float r, float sc, const std::vector<float>& m, const std::vector<float>& f, bool valid)
-            : pitch(p), brightness(b), resonance(r), centroid (sc), mfcc(m), formants(f), isValid(valid) {}
+    AudioFeatures(float p, float b, float r, float sc, const std::vector<float>& m, const std::vector<float>& f, float hnr, bool valid)
+            : pitch(p), brightness(b), resonance(r), centroid (sc), mfcc(m), formants(f), hnr(hnr), isValid(valid) {}
 };
 
 /**
@@ -46,6 +47,8 @@ private:
     std::unique_ptr<essentia::standard::Algorithm> spectrumAlg;
     std::unique_ptr<essentia::standard::Algorithm> spectralPeaksAlg;
     std::unique_ptr<essentia::standard::Algorithm> lpcAlg;
+    std::unique_ptr<essentia::standard::Algorithm> harmonicPeaksAlg;
+    std::unique_ptr<essentia::standard::Algorithm> stochasticModelAnalAlg;
 
     // Analysis parameters
     int sampleRate;

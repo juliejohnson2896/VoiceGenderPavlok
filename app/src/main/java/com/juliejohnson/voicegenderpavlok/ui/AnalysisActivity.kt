@@ -9,6 +9,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import com.juliejohnson.voicegenderpavlok.R
+import com.juliejohnson.voicegenderpavlok.audio.AudioFeatures
 import com.juliejohnson.voicegenderpavlok.audio.EssentiaAnalyzer
 import com.juliejohnson.voicegenderpavlok.ml.VoiceProfile
 import com.juliejohnson.voicegenderpavlok.storage.SessionStorage
@@ -26,6 +27,7 @@ class AnalysisActivity : AppCompatActivity() {
     private lateinit var formant2TextView: TextView
     private lateinit var startRecButton: Button
     private lateinit var stopRecButton: Button
+    private lateinit var hnrTextView: TextView
 
     // Analysis Engine
     private lateinit var essentiaAnalyzer: EssentiaAnalyzer
@@ -50,6 +52,7 @@ class AnalysisActivity : AppCompatActivity() {
         formant2TextView = findViewById(R.id.formant2_text)
         startRecButton = findViewById(R.id.button_start_recording)
         stopRecButton = findViewById(R.id.button_stop_recording)
+        hnrTextView = findViewById(R.id.hnr_text)
 
         startRecButton.setOnClickListener { startSessionRecording() }
         stopRecButton.setOnClickListener { stopSessionRecording() }
@@ -112,14 +115,31 @@ class AnalysisActivity : AppCompatActivity() {
                     )
                 )
             }
+            updateUI(features)
+        }
+    }
 
-            // Update UI
-            runOnUiThread {
-                pitchTextView.text = if (features.pitch > 0) "%.2f Hz".format(features.pitch) else "..."
-                formant1TextView.text =
-                    if (features.formants.isNotEmpty()) "F1: %.0f Hz".format(features.formants[0]) else "F1: ..."
-                formant2TextView.text =
-                    if (features.formants.size >= 2) "F2: %.0f Hz".format(features.formants[1]) else "F2: ..."
+    private fun updateUI(features: AudioFeatures) {
+        // Update UI
+        runOnUiThread {
+            pitchTextView.text = if (features.pitch > 0) "%.2f Hz".format(features.pitch) else "..."
+            formant1TextView.text =
+                if (features.formants.isNotEmpty()) "F1: %.0f Hz".format(features.formants[0]) else "F1: ..."
+            formant2TextView.text =
+                if (features.formants.size >= 2) "F2: %.0f Hz".format(features.formants[1]) else "F2: ..."
+
+            // Update the HNR text view with our new, meaningful description
+            if (features.hnr > 0) { // HNR can be negative, so we check if it's a valid calculation
+                // --- NEW: Interpret the HNR value ---
+                val hnrDescription = when {
+                    features.hnr < 15.0f -> "Breathy"
+                    features.hnr < 25.0f -> "Clear"
+                    else -> "Resonant"
+                }
+
+                hnrTextView.text = "Clarity: $hnrDescription (%.1f dB)".format(features.hnr)
+            } else {
+                hnrTextView.text = "Clarity (HNR): ..."
             }
         }
     }
