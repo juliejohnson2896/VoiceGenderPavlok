@@ -16,6 +16,10 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven {
+            name "be.0110.repoReleases"
+            url "https://mvn.0110.be/releases"
+        }
         // Add any other repositories you were using in build.gradle here
         flatDir {
             dirs("libs")

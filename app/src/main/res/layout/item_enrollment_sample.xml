@@ -1,26 +1,53 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="horizontal"
-    android:padding="12dp"
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="12dp">
 
     <TextView
-        android:id="@+id/sample_label"
-        android:layout_width="0dp"
-        android:layout_weight="1"
+        android:id="@+id/label_text"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Sample"
-        android:textSize="16sp" />
+        android:text="Sample Label"
+        android:textStyle="bold"/>
 
-    <Button
-        android:id="@+id/play_button"
+    <TextView
+        android:id="@+id/timestamp_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="2025-06-19 12:00:00" />
+
+    <TextView
+        android:id="@+id/auto_enrolled_tag"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Play" />
+        android:text="Auto-Enrolled"
+        android:textColor="@android:color/holo_blue_dark"
+        android:textSize="12sp"
+        android:visibility="gone"
+        android:paddingTop="2dp"
+        android:paddingBottom="4dp" />
 
-    <Button
-        android:id="@+id/delete_button"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Delete" />
+        android:orientation="horizontal"
+        android:paddingTop="8dp">
+
+        <Button
+            android:id="@+id/play_button"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="Play" />
+
+        <Button
+            android:id="@+id/delete_button"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="Delete" />
+    </LinearLayout>
 </LinearLayout>

@@ -2,26 +2,46 @@ plugins {
     id "com.android.application"
     id "org.jetbrains.kotlin.android"
     alias(libs.plugins.kotlin.compose)
+    id 'kotlinx-serialization'
 }
 
 android {
-    namespace 'com.example.voicegenderpavlok'
+    namespace 'com.juliejohnson.voicegenderpavlok'
     compileSdk 35
 
     defaultConfig {
-        applicationId "com.example.voicegenderpavlok"
+        applicationId "com.juliejohnson.voicegenderpavlok"
         minSdk 28
         targetSdk 35
         versionCode 1
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        // NDK configuration
+        ndk {
+            // Specify the ABIs you want to build for
+            abiFilters 'arm64-v8a'
+            // Add x86, x86_64 if you need emulator support:
+            // abiFilters 'arm64-v8a', 'armeabi-v7a', 'x86', 'x86_64'
+        }
     }
 
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+
+            // NDK debug symbols for release builds (optional)
+            ndk {
+                debugSymbolLevel 'SYMBOL_TABLE'
+            }
+            debug {
+                // Enable NDK debugging
+                debuggable true
+            }
+            debuggable true
+            signingConfig signingConfigs.debug
         }
     }
 
@@ -34,9 +54,38 @@ android {
         jvmTarget = '17'
     }
 
+    // NDK build configuration
+    ndkVersion '27.2.12479018'
+    packagingOptions {
+        jniLibs {
+            pickFirsts += ['**/libc++_shared.so', '**/libjsc.so']
+        }
+        resources {
+            excludes += ['META-INF/DEPENDENCIES', 'META-INF/LICENSE', 'META-INF/LICENSE.txt', 'META-INF/NOTICE', 'META-INF/NOTICE.txt']
+        }
+    } // Use your installed NDK version
+
+    // Packaging options
+
     buildFeatures {
         viewBinding true
         compose true
+    }
+
+    // This tells Gradle where your C++ build script is located
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+            version "3.22.1" // Or a recent version installed via SDK manager
+        }
+    }
+
+    // Source sets configuration
+    sourceSets {
+        main {
+            // Ensure JNI libraries are included
+            jniLibs.srcDirs = ['src/main/jniLibs']
+        }
     }
 }
 
@@ -46,6 +95,7 @@ dependencies {
     implementation libs.androidx.material3.android
     implementation libs.androidx.appcompat
     implementation libs.material
+    implementation libs.androidx.recyclerview // or latest
 
     // Coroutines for background tasks
     implementation libs.kotlinx.coroutines.android
@@ -65,5 +115,48 @@ dependencies {
     implementation(name:'android-vad-silero', ext:'aar')
     implementation libs.onnxruntime.android
 
+    // Json Serialization
     implementation(libs.kotlinx.serialization.json)
+
+    implementation libs.jtransforms
+
+    implementation libs.androidx.lifecycle.viewmodel.ktx
+    implementation libs.androidx.activity.ktx
+
+    // Audio Feature processing
+    // https://mvnrepository.com/artifact/be.tarsos.dsp/core
+    implementation libs.core
+    implementation libs.jvm
 }
+
+// Optional: Task to verify Essentia libraries exist
+tasks.register('verifyEssentiaLibraries') {
+    doLast {
+        def abiList = ['arm64-v8a', 'armeabi-v7a']
+        def missingLibs = []
+
+        abiList.each { abi ->
+            def libPath = file("src/main/jniLibs/${abi}/libessentia.a")
+            if (!libPath.exists()) {
+                missingLibs.add("${abi}/libessentia.a")
+            } else {
+                println "✓ Found libessentia.a for ${abi}"
+            }
+        }
+
+        if (!missingLibs.empty) {
+            throw new GradleException("Missing Essentia libraries: ${missingLibs.join(', ')}")
+        }
+
+        // Check for headers
+        def headersPath = file("src/main/cpp/essentia")
+        if (!headersPath.exists()) {
+            println "⚠ Warning: Essentia headers not found at src/main/cpp/essentia"
+        } else {
+            println "✓ Found Essentia headers"
+        }
+    }
+}
+
+// Run verification before building
+preBuild.dependsOn verifyEssentiaLibraries
