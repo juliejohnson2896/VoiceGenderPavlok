@@ -122,11 +122,17 @@ class AnalysisActivity : AppCompatActivity() {
     private fun updateUI(features: AudioFeatures) {
         // Update UI
         runOnUiThread {
-            pitchTextView.text = if (features.pitch > 0) "%.2f Hz".format(features.pitch) else "..."
-            formant1TextView.text =
-                if (features.formants.isNotEmpty()) "F1: %.0f Hz".format(features.formants[0]) else "F1: ..."
-            formant2TextView.text =
-                if (features.formants.size >= 2) "F2: %.0f Hz".format(features.formants[1]) else "F2: ..."
+            if (features.pitch > 0) {
+                pitchTextView.text = "%.2f Hz".format(features.pitch)
+            }
+
+            if (features.formants.isNotEmpty()) {
+                formant1TextView.text = "F1: %.0f Hz".format(features.formants[0])
+            }
+
+            if (features.formants.size >= 2) {
+                formant2TextView.text = "F2: %.0f Hz".format(features.formants[1])
+            }
 
             // Update the HNR text view with our new, meaningful description
             if (features.hnr > 0) { // HNR can be negative, so we check if it's a valid calculation
@@ -138,8 +144,6 @@ class AnalysisActivity : AppCompatActivity() {
                 }
 
                 hnrTextView.text = "Clarity: $hnrDescription (%.1f dB)".format(features.hnr)
-            } else {
-                hnrTextView.text = "Clarity (HNR): ..."
             }
         }
     }
