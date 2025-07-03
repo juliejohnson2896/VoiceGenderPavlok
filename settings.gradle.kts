@@ -11,16 +11,17 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS) // This enforces repository definition in settings.gradle
     repositories {
         google()
         mavenCentral()
         maven {
-            name "be.0110.repoReleases"
-            url "https://mvn.0110.be/releases"
+            name = "be.0110.repoReleases"
+            url = uri("https://mvn.0110.be/releases")
         }
-        // Add any other repositories you were using in build.gradle here
+        // Add any other repositories you were using in build.gradle.kts here
         flatDir {
             dirs("libs")
         }
@@ -28,4 +29,5 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "VoiceGenderPavlok"
-include ':app'
+include(":app")
+//include(":audiologiclib")
