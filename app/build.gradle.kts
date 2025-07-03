@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId = "com.juliejohnson.voicegenderpavlok"
-        minSdk = 28
+        minSdk = 30
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -101,7 +101,9 @@ android {
 
 dependencies {
     // Voice Gender Assist (VGA) Audio Logic Library
+    implementation(libs.audiologiclib)
 //    implementation(project(":audiologiclib"))
+//    implementation("com.juliejohnson.voicegenderassist:audiologiclib")
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.ui)

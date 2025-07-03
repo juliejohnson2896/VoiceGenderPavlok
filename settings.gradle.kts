@@ -30,4 +30,11 @@ dependencyResolutionManagement {
 
 rootProject.name = "VoiceGenderPavlok"
 include(":app")
-//include(":audiologiclib")
+
+// Include the KMP library build
+includeBuild("../audiologiclib") {
+    dependencySubstitution {
+        // Substitute the Maven dependency with the local project
+        substitute(module("com.juliejohnson.voicegenderassist:audiologiclib")).using(project(":audiologiclib"))
+    }
+}
