@@ -1,0 +1,9 @@
+librosa==0.8.1
+numpy==1.21.4
+scipy==1.4.1
+numba==0.48.0
+scikit-learn==0.23.2
+SoundFile==0.10.3.post1
+resampy==0.2.2
+joblib
+decorator

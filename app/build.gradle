@@ -3,6 +3,7 @@ plugins {
     id "org.jetbrains.kotlin.android"
     alias(libs.plugins.kotlin.compose)
     id 'kotlinx-serialization'
+    id("com.chaquo.python")
 }
 
 android {
@@ -72,6 +73,11 @@ android {
         compose true
     }
 
+    flavorDimensions "pyVersion"
+    productFlavors {
+        create("py38") { dimension = "pyVersion" }
+    }
+
     // This tells Gradle where your C++ build script is located
     externalNativeBuild {
         cmake {
@@ -89,6 +95,28 @@ android {
     }
 }
 
+chaquopy {
+    productFlavors {
+        getByName("py38") { version = "3.8" }
+    }
+    defaultConfig {
+//        buildPython(".venv/Scripts/python.exe")
+        pip {
+            options("--extra-index-url", "https://chaquo.com/pypi-extra")
+            install "librosa==0.8.1"
+            install "numpy==1.21.4"
+            install "scipy==1.4.1"
+            install "numba==0.48.0"
+            install "scikit-learn==0.23.2"
+            install "SoundFile==0.10.3.post1"
+            install "resampy==0.2.2"
+            // You can add other pure-python libraries here without version pinning if desired
+            install "joblib"
+            install "decorator"
+        }
+    }
+}
+
 dependencies {
     implementation libs.androidx.core.ktx
     implementation libs.ui
@@ -102,7 +130,6 @@ dependencies {
 
     // TensorFlow Lite for ML (we can later swap in PyTorch Mobile)
     implementation libs.tensorflow.lite
-//    implementation libs.tensorflow.lite.support
 
     // Retrofit for API calls
     implementation libs.retrofit
@@ -124,9 +151,11 @@ dependencies {
     implementation libs.androidx.activity.ktx
 
     // Audio Feature processing
-    // https://mvnrepository.com/artifact/be.tarsos.dsp/core
-    implementation libs.core
-    implementation libs.jvm
+// https://mvnrepository.com/artifact/com.github.st-h/TarsosDSP
+    implementation(name:'tarsosdsp', ext:'jar')
+//    implementation files('libs/TarsosDSP-2.4.1.jar')
+//    implementation files('libs/TarsosDSP-Android-2.4.1.jar')
+
 }
 
 // Optional: Task to verify Essentia libraries exist

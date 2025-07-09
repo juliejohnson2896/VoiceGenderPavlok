@@ -85,4 +85,11 @@
         android:text="Start Voice Analysis"
         android:layout_marginTop="16dp"/>
 
+    <Button
+        android:id="@+id/button_pitch_detection"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Pitch Detection"
+        android:layout_marginTop="16dp"/>
+
 </LinearLayout>

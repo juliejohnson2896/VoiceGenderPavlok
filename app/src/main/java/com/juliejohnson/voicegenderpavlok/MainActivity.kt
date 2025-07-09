@@ -16,6 +16,7 @@ import com.juliejohnson.voicegenderpavlok.ml.MLUtils
 import com.juliejohnson.voicegenderpavlok.storage.EnrollmentStorage
 import com.juliejohnson.voicegenderpavlok.ui.AnalysisActivity
 import com.juliejohnson.voicegenderpavlok.ui.EnrollmentActivity
+import com.juliejohnson.voicegenderpavlok.ui.PitchDetectionActivity
 import com.juliejohnson.voicegenderpavlok.ui.enrollment.EnrollmentHistoryActivity
 import com.juliejohnson.voicegenderpavlok.ui.SettingsActivity
 import com.juliejohnson.voicegenderpavlok.ui.SpeakerTestActivity
@@ -37,6 +38,7 @@ class MainActivity : AppCompatActivity() {
     // At the top of MainActivity with your other variable declarations
     private lateinit var analysisButton: Button
 
+    private lateinit var pitchDetectionButton: Button
 
     private val micPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -61,7 +63,8 @@ class MainActivity : AppCompatActivity() {
         enrollmentButton = findViewById(R.id.button_enroll)
         logsButton = findViewById(R.id.button_logs)
         vadStatusText = findViewById(R.id.text_vad_status)
-        speakerTestButton = findViewById<Button>(R.id.open_speaker_test_button)
+        speakerTestButton = findViewById(R.id.open_speaker_test_button)
+        pitchDetectionButton = findViewById(R.id.button_pitch_detection)
 
         startButton.setOnClickListener {
             checkMicPermissionAndStart()
@@ -96,6 +99,10 @@ class MainActivity : AppCompatActivity() {
         analysisButton = findViewById(R.id.button_start_analysis)
         analysisButton.setOnClickListener {
             startActivity(Intent(this, AnalysisActivity::class.java))
+        }
+
+        pitchDetectionButton.setOnClickListener {
+            startActivity(Intent(this, PitchDetectionActivity::class.java))
         }
 
         permissionStatusText = findViewById(R.id.text_permission_status)

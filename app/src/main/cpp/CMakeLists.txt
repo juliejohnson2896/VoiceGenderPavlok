@@ -24,6 +24,11 @@ endif()
 set(NATIVE_SOURCES
         essentia_jni.cpp
         essentia_wrapper.cpp
+        formant_jni.cpp
+        formant_analyzer.cpp
+        find_polynomial_roots_jenkins_traub.cc
+        polynomial.cc
+        simple_resampler.h
 )
 
 # Define header directories
